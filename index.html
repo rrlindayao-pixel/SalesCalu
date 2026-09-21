@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#111827">
+<title>Daily Sales Calculator</title>
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sales Calculator">
+<meta name="application-name" content="Sales Calculator">
+<meta name="theme-color" content="#111827">
+<style>
+:root{--ink:#111827;--muted:#6b7280;--line:#d9dde3;--bg:#f3f4f6;--card:#fff;--green:#20a64a;--green2:#17863a;--soft:#f8fafc}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
+body{min-height:100vh}
+.app{width:min(100%,900px);margin:auto;padding:10px 12px 18px}
+.summary-toggle-row{margin:8px 0 10px}
+.summary-toggle{width:100%;height:48px;border:2px solid #d9dde3;border-radius:16px;background:#fff;color:#111827;font-size:18px;font-weight:900}
+#reports.collapsed{display:none}
+h1{font-size:29px;line-height:1.05;margin:0 0 3px;font-weight:800;letter-spacing:-1px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.brand-icon{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,#111827,#243447);color:#35c766;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;box-shadow:0 5px 14px #11182722}
+.subtitle{font-size:17px;color:var(--muted);font-weight:700;margin-bottom:10px}
+.card{background:var(--card);border-radius:30px;padding:28px;box-shadow:0 8px 28px #11182712;margin-bottom:22px}
+.display{height:125px;border:2px solid #e1e5ea;border-radius:28px;background:#fafbfc;display:flex;align-items:center;justify-content:flex-end;padding:20px 26px;font-size:55px;font-weight:900;letter-spacing:-2px;overflow:hidden}
+.category-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0 20px}
+button{font:inherit;cursor:pointer;border:0}
+.cat{height:86px;border:2px solid var(--line);border-radius:28px;background:white;font-size:27px;font-weight:800;color:#111827}
+.cat.active{background:var(--ink);color:white;border-color:var(--ink)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.key{height:100px;border:2px solid var(--line);border-radius:26px;background:#fff;font-size:34px;font-weight:900;color:#050505}
+.key:active,.cat:active,.add:active,.save:active{transform:scale(.98)}
+.key.action{font-size:31px}
+.add{width:100%;height:78px;border-radius:24px;background:var(--green);color:#fff;font-size:27px;font-weight:900;margin-top:18px}
+.add:hover,.save:hover{background:var(--green2)}
+.total-row{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding:4px 2px}
+.total-label{font-size:28px;font-weight:900}
+.total-value{font-size:34px;font-weight:900;color:var(--green)}
+.save{width:100%;height:82px;border-radius:25px;background:var(--ink);color:#fff;font-size:27px;font-weight:900;margin-top:18px}
+.current-items{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+.item{display:flex;align-items:center;gap:7px;padding:7px 8px 7px 11px;border-radius:14px;background:#f0f2f5;font-weight:800;color:#374151}
+.item b{color:var(--green)}
+.edit-item,.delete-item{width:30px;height:30px;border-radius:9px;border:0;font-weight:900;font-size:18px;line-height:1;background:#fff;color:#111827}
+.delete-item{color:#b42318}
+.edit-item:active,.delete-item:active{transform:scale(.92)}
+.item b{color:var(--green)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.toolbar h2{font-size:28px;margin:0;font-weight:900}
+.toggle{border:2px solid var(--line);background:#fff;border-radius:20px;padding:12px 17px;font-size:18px;font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat{background:#fff;border-radius:25px;padding:23px 18px;box-shadow:0 5px 18px #1118270d}
+.stat .label{color:var(--muted);font-weight:800;font-size:19px}
+.stat .num{font-size:27px;font-weight:900;margin-top:9px}
+.history{background:#fff;border-radius:30px;padding:25px;box-shadow:0 5px 18px #1118270d}
+.history-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.history h2{margin:0;font-size:27px}
+.reset{background:#fff;border:2px solid var(--line);border-radius:20px;padding:12px 18px;font-size:18px;font-weight:800}
+.tx{padding:16px 0;border-bottom:1px solid #e5e7eb}
+.tx:last-child{border-bottom:0}
+.tx-top{display:flex;justify-content:space-between;font-weight:900;font-size:19px}
+.tx-total{color:var(--green)}
+.tx-detail{color:var(--muted);margin-top:7px;font-size:15px;line-height:1.45}
+.empty{color:var(--muted);text-align:center;padding:25px 5px;font-weight:700}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);background:var(--ink);color:white;padding:13px 18px;border-radius:16px;font-weight:800;box-shadow:0 8px 30px #0003;opacity:0;pointer-events:none;transition:.2s;z-index:20}
+.toast.show{opacity:1}
+.install{display:none;background:#ecfdf3;border:1px solid #bbf7d0;color:#166534;border-radius:18px;padding:13px 16px;font-weight:800;margin-bottom:18px}
+@media(max-width:600px){
+ .app{padding:8px 9px 12px} .card{padding:14px;border-radius:22px;margin-bottom:10px}
+ h1{font-size:24px}.subtitle{font-size:15px;margin-bottom:0}.brand{gap:9px;margin-bottom:8px}.brand-icon{width:42px;height:42px;border-radius:13px;font-size:26px}
+ .display{height:76px;font-size:36px;border-radius:18px;padding:12px 18px}
+ .category-row{gap:8px;margin:10px 0 9px}.cat{height:52px;font-size:18px;border-radius:17px}
+ .pad{gap:7px}.key{height:54px;border-radius:15px;font-size:25px}
+ .add{height:50px;font-size:19px;margin-top:9px;border-radius:16px}
+ .current-items{margin-top:8px;gap:5px}.item{padding:4px 6px 4px 8px;border-radius:9px;font-size:12px}.edit-item,.delete-item{width:25px;height:25px;border-radius:7px;font-size:15px}
+ .total-row{margin-top:9px}.total-label{font-size:19px}.total-value{font-size:24px}
+ .save{height:52px;font-size:19px;margin-top:8px;border-radius:16px}
+ .summary-toggle-row{margin:6px 0}.summary-toggle{height:43px;font-size:16px;border-radius:14px}
+ .stats{gap:6px;margin-bottom:8px}.stat{padding:11px 8px;border-radius:15px}
+ .stat .label{font-size:12px}.stat .num{font-size:17px;margin-top:4px}.history{padding:13px;border-radius:20px}
+ .history h2{font-size:18px}.reset{font-size:13px;padding:8px 10px;border-radius:13px}
+ .tx{padding:9px 0}.tx-top{font-size:15px}.tx-detail{font-size:12px;margin-top:4px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="installBox" class="install">This app can be installed on your device from your browser menu.</div>
+  <div class="brand">
+    <div class="brand-icon">₱</div>
+    <div>
+      <h1>Daily Sales Calculator</h1>
+      <div class="subtitle">Food &amp; Grocery</div>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="display" id="display">₱0.00</div>
+
+    <div class="category-row">
+      <button class="cat active" id="foodBtn" onclick="setCategory('Food')">🍽️ Food</button>
+      <button class="cat" id="groceryBtn" onclick="setCategory('Grocery')">🛒 Grocery</button>
+    </div>
+
+    <div class="pad">
+      <button class="key" onclick="press('7')">7</button>
+      <button class="key" onclick="press('8')">8</button>
+      <button class="key" onclick="press('9')">9</button>
+      <button class="key" onclick="press('4')">4</button>
+      <button class="key" onclick="press('5')">5</button>
+      <button class="key" onclick="press('6')">6</button>
+      <button class="key" onclick="press('1')">1</button>
+      <button class="key" onclick="press('2')">2</button>
+      <button class="key" onclick="press('3')">3</button>
+      <button class="key" onclick="press('0')">0</button>
+      <button class="key" onclick="press('.')">.</button>
+      <button class="key action" onclick="backspace()">⌫</button>
+    </div>
+
+    <button class="add" onclick="addAmount()">＋ Add Amount</button>
+
+    <div class="current-items" id="currentItems"></div>
+
+    <div class="total-row">
+      <div class="total-label">Transaction Total</div>
+      <div class="total-value" id="transactionTotal">₱0.00</div>
+    </div>
+    <button class="save" onclick="saveTransaction()">Save Transaction</button>
+  </section>
+
+  <div class="summary-toggle-row">
+    <button class="summary-toggle" id="summaryToggle" onclick="toggleSummary()">▼ Show Sale Summary</button>
+  </div>
+
+  <div id="reports">
+    <div class="stats">
+      <div class="stat"><div class="label">Food Today</div><div class="num" id="foodTotal">₱0.00</div></div>
+      <div class="stat"><div class="label">Grocery Today</div><div class="num" id="groceryTotal">₱0.00</div></div>
+      <div class="stat"><div class="label">Daily Total</div><div class="num" id="dailyTotal">₱0.00</div></div>
+    </div>
+
+    <section class="history">
+      <div class="history-head">
+        <h2>Today's Transactions</h2>
+        <button class="reset" onclick="resetDay()">Reset Day</button>
+      </div>
+      <div id="transactions"></div>
+    </section>
+  </div>
+
+  <div style="text-align:center;color:#9ca3af;font-size:13px;font-weight:700;margin-top:20px">
+    Sales are saved on this device.
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY='dailySalesCalculator_v1';
+let state=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[]}');
+let category='Food', input='0', current=[];
+
+function money(n){return '₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function saveState(){localStorage.setItem(KEY,JSON.stringify(state)); render()}
+function setCategory(c){
+  category=c;
+  document.getElementById('foodBtn').classList.toggle('active',c==='Food');
+  document.getElementById('groceryBtn').classList.toggle('active',c==='Grocery');
+}
+function press(x){
+  if(x==='.' && input.includes('.')) return;
+  if(input==='0' && x!=='.') input=x;
+  else if(input.length<10) input+=x;
+  updateDisplay();
+}
+function backspace(){
+  input=input.length>1?input.slice(0,-1):'0'; updateDisplay();
+}
+function updateDisplay(){document.getElementById('display').textContent=money(parseFloat(input)||0)}
+function addAmount(){
+  const n=parseFloat(input);
+  if(!Number.isFinite(n)||n<=0){toast('Enter an amount first');return}
+  current.push({category,amount:n});
+  input='0'; updateDisplay(); renderCurrent();
+}
+function renderCurrent(){
+  document.getElementById('currentItems').innerHTML=current.map((x,i)=>
+    `<div class="item">
+      <span>${x.category}: <b>${money(x.amount)}</b></span>
+      <button class="edit-item" onclick="editAmount(${i})" aria-label="Edit amount">✎</button>
+      <button class="delete-item" onclick="deleteAmount(${i})" aria-label="Delete amount">×</button>
+    </div>`).join('');
+  const t=current.reduce((s,x)=>s+x.amount,0);
+  document.getElementById('transactionTotal').textContent=money(t);
+}
+function editAmount(index){
+  const item=current[index];
+  if(!item) return;
+  current.splice(index,1);
+  input=String(item.amount);
+  setCategory(item.category);
+  updateDisplay();
+  renderCurrent();
+  toast('Amount loaded for editing');
+}
+function deleteAmount(index){
+  if(!current[index]) return;
+  current.splice(index,1);
+  renderCurrent();
+  toast('Amount deleted');
+}
+function saveTransaction(){
+  if(!current.length){toast('Add at least one amount');return}
+  const total=current.reduce((s,x)=>s+x.amount,0);
+  state.transactions.unshift({id:Date.now(),time:new Date().toISOString(),items:current,total});
+  current=[]; input='0'; updateDisplay(); renderCurrent(); saveState(); toast('Transaction saved');
+}
+function render(){
+  let food=0,grocery=0;
+  state.transactions.forEach(t=>t.items.forEach(i=>i.category==='Food'?food+=i.amount:grocery+=i.amount));
+  document.getElementById('foodTotal').textContent=money(food);
+  document.getElementById('groceryTotal').textContent=money(grocery);
+  document.getElementById('dailyTotal').textContent=money(food+grocery);
+  const box=document.getElementById('transactions');
+  if(!state.transactions.length){box.innerHTML='<div class="empty">No transactions recorded yet.</div>';return}
+  box.innerHTML=state.transactions.map(t=>{
+    const d=new Date(t.time);
+    const details=t.items.map(i=>`${i.category} ${money(i.amount)}`).join(' • ');
+    return `<div class="tx"><div class="tx-top"><span>${d.toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit'})}</span><span class="tx-total">${money(t.total)}</span></div><div class="tx-detail">${details}</div></div>`;
+  }).join('');
+}
+function resetDay(){
+  if(!state.transactions.length){toast('Nothing to reset');return}
+  if(confirm('Reset today’s sales? This cannot be undone.')){
+    state.transactions=[];saveState();toast('Day reset');
+  }
+}
+function toggleSummary(){
+  const reports=document.getElementById('reports');
+  const btn=document.getElementById('summaryToggle');
+  const hidden=reports.classList.toggle('collapsed');
+  btn.textContent=hidden?'▶ Show Sale Summary':'▼ Hide Sale Summary';
+  localStorage.setItem('salesSummaryHidden',hidden?'1':'0');
+}
+function initSummary(){
+  const hidden=localStorage.getItem('salesSummaryHidden')==='1';
+  if(hidden){
+    document.getElementById('reports').classList.add('collapsed');
+    document.getElementById('summaryToggle').textContent='▶ Show Sale Summary';
+  }
+}
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(window._toast);window._toast=setTimeout(()=>el.classList.remove('show'),1800);
+}
+render();renderCurrent();updateDisplay();initSummary();
+
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._install=e;document.getElementById('installBox').style.display='block'});
+</script>
+</body>
+</html>
